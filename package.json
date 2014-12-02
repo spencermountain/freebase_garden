@@ -1,0 +1,18 @@
+{
+    "author": "Spencer Kelly <spencerwater@gmail.com> (http://spencermounta.in)",
+    "name": "freebase_garden",
+    "description": "reasonable workflows for getting wikipedia data into freebase",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/spencermountain/freebase_garden.git"
+    },
+    "main": "index.js",
+    "engines": [
+        "node >= 0.3.6"
+    ],
+    "dependencies": {
+        "freebase": "*",
+        "async": "0.8.0"
+    }
+}
