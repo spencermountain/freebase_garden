@@ -1,5 +1,6 @@
-var freebase= require("freebase")
+var freebase= require("/Users/spencer/mountain/freebase")
 var fns= require("./fns")
+var CREDENTIALS=require("./auth/credentials")
 
 
 
@@ -18,14 +19,12 @@ var category_garden = function(obj, callback) {
 }
 
 
-var freebase_key = ""
-var write_token = ""
 
 
 var obj = {
     cat: "Category:Bridges_in_Canada",
-    key: freebase_key,
-    access_token: write_token,
+    key: CREDENTIALS.API_KEY,
+    access_token: CREDENTIALS.WRITE_TOKEN,
     depth: 2,
     filter: {
         not_types: ["/transportation/bridge", "/time/event"],
@@ -37,24 +36,23 @@ var obj = {
 }
 
 var obj = {
-    cat: "Category:Theatrical genres",
-    key: freebase_key,
-    access_token: write_token,
+    cat: "Category:Television_genres",
+    key: CREDENTIALS.API_KEY,
+    access_token: CREDENTIALS.WRITE_TOKEN,
     depth: 1,
     filter: {
-        not_types: ["/theater/play"]
+        not_types: ["/tv/tv_program"]
     },
-    // write: {
-    //     type: "/theater/theater_genre"
-    // }
+    write: {
+        type: "/tv/tv_genre"
+    }
 }
-
-category_garden(obj, function(r) {
-    console.log(JSON.stringify(r, null, 2));
-})
-
 
 
 module.exports= {
   category_garden:category_garden
 }
+
+category_garden(obj, function(r) {
+    console.log(JSON.stringify(r, null, 2));
+})

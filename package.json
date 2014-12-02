@@ -13,6 +13,8 @@
     ],
     "dependencies": {
         "freebase": "*",
-        "async": "0.8.0"
+        "async": "0.8.*",
+        "open": "0.0.*",
+        "googleapis": "0.6.*"
     }
 }
