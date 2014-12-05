@@ -3,6 +3,7 @@ var credentials = require(file);
 var googleapis = require('googleapis');
 var OAuth2 = googleapis.auth.OAuth2;
 var open = require("open");
+var fs= require("fs")
 
 var oauth2Client = new OAuth2(credentials.CLIENT_ID, credentials.CLIENT_SECRET, credentials.REDIRECT_URL);
 
@@ -42,7 +43,10 @@ console.log('opening authentication url in your browser... ')
 open(url)
 console.log(" ")
 command_line_ask("  what is the 'code' from the resulting webpage: ", /.+/, function(code) {
-	console.log('...generating tokens...')
+	console.log(" ")
+	console.log(" ")
+	console.log(" ")
+	console.log('great.  .generating tokens...')
 	oauth2Client.getToken(code, function(err, tokens) {
 		if (err) {
 			console.log(err)
@@ -51,25 +55,20 @@ command_line_ask("  what is the 'code' from the resulting webpage: ", /.+/, func
 		console.log(" ")
 		console.log(" ")
 		console.log(" ")
+		console.log("woohoo! it's working..")
 		console.log(" ")
 		console.log(" ")
-		console.log("woohoo!")
-		// console.log("here are your oauth tokens, they last about 3 hours..")
-		// console.log("===========================")
-		// console.log(JSON.stringify(tokens, null, 2))
-		// console.log("===========================")
-		console.log(" ")
-		console.log(" ")
-		console.log(" ")
-		console.log("   ")
-		console.log("access_token= '" + tokens.access_token + "'")
 		//write it to the credentials file
 		credentials.WRITE_TOKEN=tokens.access_token;
-		var str="module.exports= " + JSON.stringify()
-		fs.writeFileSync("./credentials.js",)
+		var str="//automatically generated from ./authenticate.  Don't commit!! \n"
+		str+="module.exports= " + JSON.stringify(credentials, null, 2)
+		fs.writeFileSync("./auth/credentials.js", str)
 		console.log("   ")
 		console.log("   ")
+		console.log("ok, your new access token is written into ./auth/credentials.js.")
+		console.log("you're ready to go!")
 		console.log("you rule!")
+		// console.log("try out:  garden.test_write() ")
 		process.exit(0)
 	})
 })

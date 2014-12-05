@@ -2,6 +2,7 @@ var freebase= require("/Users/spencer/mountain/freebase")
 var fns= require("./fns")
 var async=require("async")
 var CREDENTIALS=require("./auth/credentials")
+var MUTEX= require("./mutex")
 require("dirtyjs")
 var LANG= "en"
 
@@ -26,7 +27,8 @@ exports.from_category = function(obj, callback) {
 //find pages in a category that have no type, or dont meet criteria
 exports.need_work= function(obj, callback){
   var options={
-    key:CREDENTIALS.API_KEY
+    key:CREDENTIALS.API_KEY,
+    depth:1
   }
   freebase.from_category(obj.cat, options, function(r){
     var arr= r.map(function(o){
@@ -34,10 +36,10 @@ exports.need_work= function(obj, callback){
         id:o.id,
         mid:null,
         name:null,
-        type:[]
+        "a:type":[]
       }
       if(obj.type){
-        q['a:type']= [{
+        q.type= [{
           "id": obj.type,
           "optional": "forbidden"
         }]
@@ -88,10 +90,21 @@ exports.inspect_categories= function(obj, callback){
     });
   })
 }
-// exports.inspect_categories({cat:"Category:Bridges_by_river", type:"/transportation/bridge"}, console.log)
 
+//take a list of wp titles and remove a type from them
+exports.remove_type=function(list, type, callback){
+  var options={
+    key:CREDENTIALS.API_KEY,
+    access_token: CREDENTIALS.WRITE_TOKEN,
+    type:type
+  }
+  list= list.map(function(p){
+    return "/wikipedia/" + LANG + "/" +freebase.mql_encode(p)
+  })
+  freebase.remove_type(list, options, console.log)
+}
 
-
+//take a list of wp titles and add a type to them
 exports.write_list=function(list, type, callback){
   var options={
     key:CREDENTIALS.API_KEY,
@@ -107,100 +120,56 @@ exports.write_list=function(list, type, callback){
 
 
 
-list= [
-       'Attock Bridge',
-       'Ayub Bridge',
-       'Kotri Bridge',
-       'Raikot Bridge',
-       'King Abdullah Bridge' ,
-       'Kyaka Bridge',
-       'Rusumo Bridge',
-       'Rusumo International Bridge',
-       'Butchers\' Bridge',
-       'Fabiani Bridge',
-       'Hradecky Bridge',
-       'St. James\'s Bridge',
-       'St. Peter\'s Bridge',
-       'Prule Bridge',
-       'Ljubljanica Sluice Gate',
-       'Fourth Thai–Lao Friendship Bridge',
-       'Rạch Miễu Bridge',
-       'Third Thai–Lao Friendship Bridge',
-       'Dongpingshuidao Bridge',
-       'Hedong Bridge',
-       'Hong Kong–Zhuhai–Macau Bridge',
- //       'Shenzhen-Zhongshan Bridge',
- //       'Xinguang Bridge',
- //       'Yajisha Bridge' ,
- //       'Hamm Railway Bridge',
- //       'Haus-Knipp railway bridge',
- //                      'Pont de Neuilly',
- //       'Pont de Sèvres',
- //       'Pont de Saint-Cloud',
- //       'Pont du Carrousel',
- //       'Pont au Change',
- //       'Port à l\'Anglais Bridge',
- //       'Pont Rouelle' ,
- //       'Lezíria Bridge',
- //       '14th of July Bridge',
- //       'Branický most',
- //       'Franz Joseph Bridge',
- //       'Palacký Bridge',
- //       'Troja Bridge',
- //       'Žďákov Bridge',
-
- // 'Anqing Bridge',
- //       'Anqing Railway Bridge',
- //       'Badong Bridge',
- //       'Baishatuo Railway Bridge',
- //       'Bosideng Bridge',
- //       'Caiyuanba Bridge',
- //       'Changshou Bridge',
- //       'Changshou Railway Bridge',
- //       'Dafosi Bridge',
- //       'Dashengguan Bridge',
- //       'Dingshan Bridge',
- //       'Diwei Bridge',
- //       'Edong Bridge',
- //       'Ehuang Bridge',
- //       'Erqi Bridge',
- //       'Fengjie Bridge',
- //       'Fourth Nanjing Yangtze Bridge',
- //       'Fuling Yangtze River Bridge',
- //       'Guanyinyan Bridge',
- //       'Hanjiatuo Bridge',
- //       'Hejiang Bridge',
- //       'Huangshi Bridge',
- //       'Jingyue Bridge',
- //       'Jingzhou Yangtze River Bridge',
- //       'Jiujiang Fuyin Expressway Bridge',
- //       'Lidu Bridge',
- //       'Lijiatuo Bridge',
- //       'Ma\'anshan Bridge',
- //       'Masangxi Bridge',
- //       'Nanxi Bridge',
- //       'Second Nanjing Yangtze Bridge',
- //       'Second Wanxian Bridge',
- //       'Shanghai Yangtze River Tunnel and Bridge',
- //       'Shibangou Bridge',
- //       'Taizhou Bridge',
- //       'Tongling Bridge',
- //       'Wanzhou Railway Bridge',
- //       'Wuhan Junshan Yangtze River Bridge',
- //       'Wushan Yangtze River Bridge',
- //       'Yichang Railway Bridge',
- //       'Yingwuzhou Bridge',
- //       'Yunyang Bridge',
- //       'Yuzui Yangtze River Bridge',
- //       'Zhicheng Bridge',
- //       'Zhongxian Huyu Expressway Bridge',
- //       'Zhongxian Yangtze River Bridge' ,
- //       'Armando Emilio Guebuza Bridge',
- //       'Benga Bridge',
- //       'Samora Machel Bridge'
+//things that are both typeA and typeB
+exports.incompatible_types=function(a, b, obj, callback){
+  var options={
+    key:CREDENTIALS.API_KEY
+  }
+  var query=[{
+    "a:type":a,
+    "b:type":b,
+    id:null,
+    name:null,
+    key:[{
+      namespace:"/wikipedia/en_title",
+      value:null
+    }]
+  }]
+  freebase.paginate(query, options, function(arr){
+    wp_pages=arr.map(function(a){return a.key[0].value})
+    console.log(wp_pages)
+    if(obj.remove){
+      exports.remove_type(wp_pages, obj.remove, callback)
+    }else{
+      callback(wp_pages)
+    }
+  })
+}
+// exports.incompatible_types("/transportation/bridge","/geography/body_of_water",{removex:"/transportation/bridge"}, console.log)
 
 
-       ]
+//find topics with incompatible types
+exports.issues=function(type, kind, callback){
+  var options={
+    key:CREDENTIALS.API_KEY
+  }
+  var i=0
+  var arr=MUTEX["not_"+kind]
+  arr.forEach(function(t){
+    exports.incompatible_types(type, t, {}, function(s){
+      i+=1
+      if(i>=arr.length){
+        return callback()
+      }
+    })
+  })
+}
+// exports.issues("/transportation/bridge", 'event', console.log)
+// exports.issues("/sports/sports_facility", 'location', console.log)
+// exports.issues("/sports/sports_facility", 'event', console.log)
 
+// freebase.from_category("Category:Leper hospital administrators",{}, function(r){console.log(r.map(function(s){return s.name}))})
 
-// exports.write_list(list, "/transportation/bridge", console.log)
+// exports.inspect_categories({cat:"Category:Bridge_(structure)_stubs", type:"/transportation/bridge"}, function(list){
+//   console.log(JSON.stringify(list, null, 2));
+// })
